@@ -1,0 +1,31 @@
+{
+  "name": "@gquagliano/jspdf-textbox",
+  "version": "1.0.0",
+  "description": "Rich text boxes for jsPDF.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gquagliano/jspdf-textbox.git"
+  },
+  "keywords": [
+    "jspdf",
+    "nodejs",
+    "pdf",
+    "textbox",
+    "richtext",
+    "richtextbox",
+    "md"
+  ],
+  "author": "gquagliano",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/gquagliano/jspdf-textbox/issues"
+  },
+  "homepage": "https://github.com/gquagliano/jspdf-textbox#readme",
+  "dependencies": {
+    "lodash": "^4.17.21"
+  }
+}
