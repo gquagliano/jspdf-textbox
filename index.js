@@ -8,6 +8,11 @@ function textMaxWidth(doc, text, maxWidth) {
     //this one will measure by char, breaking words
 }
 
+/**
+ * Parses a string and returns a list of instructions (tokens) to draw the text in the document.
+ * @param {string} text - Input text.
+ * @returns {object[]}
+ */
 function parseFormattedText(text) {
     //Just **bold** for now
 
@@ -56,20 +61,22 @@ function parseFormattedText(text) {
 }
 
 /**
- * Creates a new textbox to be drawn on the provided jsPDF instance. All measurements are in the document's unit.
+ * Creates a new textbox to be drawn on the provided jsPDF instance. The dimensions are computed immediately; call `draw()` to actually draw the text
+ * on the page. All values are in the document's unit.
  * @param {jsPDF} doc - jsPDF instance.
- * @param {String} text - Text to draw.
- * @param {Number} [options.startY] - Initial Y position. The default value is the top margin.
- * @param {(Object|Number)} [options.margin] - Page margins as a number (all margins will be equal), or as an object `{top, bottom, left, right}`.
- * @param {Number} [options.width] - Width of the text box. By default, it's the page width minus margins.
- * @param {String} [options.baseline] - Baseline option for the jsPDF `text()` function (see jsPDF docs). By default, it's `top`.
- * @param {Number} [options.numLines] - Limit the number of lines to be drawn.
- * @param {Number} [options.maxHeight] - Maximum height. This will disable page breaks even if the value is greater than the available space in the page.
- * @param {Boolean} [options.ellipsis] - Wether or not to add ellipsis if the text overflows the box.
- * @param {Boolean} [options.lineBreak] - If `false`, lines won't break unless a `\n` is found. Default value is `true`.
- * @param {Boolean} [options.pageBreak] - Wether or not to add new pages if necessary. Default value is `true`.
- * @param {Boolean} [options.wordBreak] - Wether or not to break words. Default value is `false`.
- * @param {String} [options.textAlign] - Text align, as `"left"` (default), `"right"` or `"center"`.
+ * @param {string} text - Text to draw.
+ * @param {number} [options.startY] - Initial Y position. The default value is the top margin.
+ * @param {(object|number)} [options.margin] - Page margins as a number (all margins will be equal), or as an object `{top, bottom, left, right}`.
+ * @param {number} [options.width] - Width of the text box. By default, it's the page width minus margins.
+ * @param {string} [options.baseline] - Baseline option for the jsPDF `text()` function (see jsPDF docs). By default, it's `top`.
+ * @param {number} [options.numLines] - Limit the number of lines to be drawn.
+ * @param {number} [options.maxHeight] - Maximum height. This will disable page breaks even if the value is greater than the available space in the page.
+ * @param {boolean} [options.ellipsis] - Wether or not to add ellipsis if the text overflows the box.
+ * @param {boolean} [options.lineBreak] - If `false`, lines won't break unless a `\n` is found. Default value is `true`.
+ * @param {boolean} [options.pageBreak] - Wether or not to add new pages if necessary. Default value is `true`.
+ * @param {boolean} [options.wordBreak] - Wether or not to break words. Default value is `false`.
+ * @param {string} [options.textAlign] - Text align, as `"left"` (default), `"right"` or `"center"`.
+ * @constructs {TextBox}
  */
 export function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLines, maxHeight, ellipsis, lineBreak = true, pageBreak = true, wordBreak, textAlign = "left" }) {
     this.data = [];
