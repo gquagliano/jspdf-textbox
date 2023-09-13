@@ -46,17 +46,35 @@ myTextBox.draw();
 |`ellipsis`|Wether or not to add ellipsis if the text overflows the box.|`false`|
 |`lineBreak`|`false`, lines won't break unless a `\n` is found.|`true`|
 |`pageBreak`|Wether or not to add new pages if necessary.|`true`|
-|`wordBreak`|Wether or not to break words.|`false`|
-|`textAlign`|Text align, as `"left"`, `"right"` or `"center"`.|`left`|
+|`textAlign`|Text align, as `"left"`, `"right"`, `"center"`, `"justify"`, `"justify-right"` or `"justify-center"`.|`left`|
+|`styles`|Styles for the different elements. See below.||
+
+#### Styles
+Only a couple of styles are supported so far.
+
+|Property|Description|Default|
+|--|--|--|
+|`h1`|Heading 1||
+|`h2`|Heading 2||
+|`p`|Default text style||
+
+*Supported styles:*
+- `fontSize`
+- `bold` (boolean)
+- `marginBottom`
+- `lineHeight` (line height factor)
+
+*Note:* Paragraph style will be the document's text style at the moment of drawing. Font face, size and leading should not change between the `textBox` instance creation and the execution of `draw()`.
   
 ## Supported formats
 - `**bold**`
+- `# Heading 1`
+- `## Heading 2`
 
 ## TODO
-1. Add more formatting tokens, including colors, or a full support for Markdown.
-2. Add tokens/tags for elements such as links and images.
-3. Justify text.
-4. Columns.
-5. Word break (option `wordBreak` not implemented).
-6. Add validations.
-7. **Test!** The current version is a work in progress, use it at your own risk.
+1. Add more formatting tokens, including colors, links and images--or full Markdown support.
+2. Add validations & friendly error messages.
+3. Columns.
+4. Hyphenate.
+5. Position the box relative to the bottom margin of the page.
+6. **Test!** The current version is a work in progress, use it at your own risk.
