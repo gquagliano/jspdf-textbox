@@ -1,4 +1,4 @@
-import { trim } from "lodash";
+const { trim } = require("lodash");
 
 /**
  * Parses a string and returns a list of instructions (tokens) to draw the text in the document.
@@ -161,6 +161,7 @@ function justifyLine(doc, tokens, startX, maxWidth, textAlign, br) {
  * on the page. All values are in the document's unit.
  * @param {jsPDF} doc - jsPDF instance.
  * @param {string} text - Text to draw.
+ * @param {object} [options] - Options.
  * @param {number} [options.startY] - Initial Y position. The default value is the top margin.
  * @param {(object|number)} [options.margin] - Page margins as a number (all margins will be equal), or as an object `{top, bottom, left, right}`.
  * @param {number} [options.width] - Width of the text box. By default, it's the page width minus margins.
@@ -174,7 +175,7 @@ function justifyLine(doc, tokens, startX, maxWidth, textAlign, br) {
  * @param {object} [styles] - Styles.
  * @constructs {TextBox}
  */
-export function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLines, maxHeight, ellipsis, lineBreak = true, pageBreak = true, wordBreak, textAlign = "left", styles = {} }) {
+function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLines, maxHeight, ellipsis, lineBreak = true, pageBreak = true, wordBreak, textAlign = "left", styles = {} }) {
     this.data = [];
     this.pages = 1;
     this.finalY = 0;
@@ -185,6 +186,9 @@ export function textBox(doc, text, { startY = 0, margin, width, baseline = "top"
         bold: false
     };
 
+    /**
+     * 
+     */
     this.compile = function () {
         const pageW = doc.internal.pageSize.getWidth(),
             pageH = doc.internal.pageSize.getHeight();
@@ -400,6 +404,11 @@ export function textBox(doc, text, { startY = 0, margin, width, baseline = "top"
         doc.restoreGraphicsState();
     };
 
+    /**
+     * 
+     * @param {object} style 
+     * @returns {number}
+     */
     function computeCurrentLineHeight(style) {
         let lineHeightFactor = style?.lineHeight || doc.getLineHeightFactor(),
             { h: lineHeight } = doc.getTextDimensions("test");
@@ -407,6 +416,11 @@ export function textBox(doc, text, { startY = 0, margin, width, baseline = "top"
         return lineHeight * lineHeightFactor;
     }
 
+    /**
+     * 
+     * @param {object} styles 
+     * @returns {object}
+     */
     function applyStyles(styles) {
         if(typeof styles == "undefined")
             styles = defaultStyle;
@@ -419,6 +433,10 @@ export function textBox(doc, text, { startY = 0, margin, width, baseline = "top"
         return styles;
     }
 
+    /**
+     * 
+     * @param {object[]} data 
+     */
     function addEllipsis(data) {
         if(!data.length)
             return;
@@ -432,11 +450,22 @@ export function textBox(doc, text, { startY = 0, margin, width, baseline = "top"
         }
     }
 
+    /**
+     * 
+     * @param {object[]} data 
+     * @param {number} lineStart 
+     * @param {string} textAlign 
+     * @param {boolean} br 
+     */
     function getLineAndJustify(data, lineStart, textAlign, br) {
         let line = data.slice(lineStart);
         justifyLine(doc, line, margin.left, width, textAlign, br);
     }
 
+    /**
+     * Draws the current instance on the document.
+     * @returns {TextBox}
+     */
     this.draw = function () {
         doc.saveGraphicsState();
 
@@ -483,3 +512,7 @@ export function textBox(doc, text, { startY = 0, margin, width, baseline = "top"
     //Measure only, this will give the caller the dimensions in order to draw something else below the text first
     this.compile();
 }
+
+module.exports = {
+    textBox
+};
