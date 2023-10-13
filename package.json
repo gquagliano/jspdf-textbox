@@ -1,6 +1,6 @@
 {
   "name": "@gquagliano/jspdf-textbox",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Rich text boxes for jsPDF.",
   "main": "index.js",
   "scripts": {
