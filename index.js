@@ -23,14 +23,23 @@ function parseFormattedText(text) {
             underline: false
         },
         ignoreWhitespaces = false,
-        stack = [];
+        stack = [],
+        escaped = false;
 
     text = text.replace(/(\r\n|\n\r)/g, "\n");
 
     for(let i = 0; i < text.length; i++) {
-        let escaped = i > 0 && text[i - 1] == "\\";
+        if(text[i] == "\\") {
+            if(text[i + 1] == "\\") {
+                buffer += "\\";
+                i++;
+            } else {
+                escaped = true;
+            }
 
-        //**
+            continue;
+        }
+
         if(text[i] == "*" && text[i + 1] == "*" && !escaped) {
             if(buffer)
                 stack.push({ text: buffer });
@@ -43,7 +52,6 @@ function parseFormattedText(text) {
             continue;
         }
 
-        //*
         if(text[i] == "*" && !escaped) {
             if(buffer)
                 stack.push({ text: buffer });
@@ -55,7 +63,6 @@ function parseFormattedText(text) {
             continue;
         }
 
-        //_
         if(text[i] == "_" && !escaped) {
             if(buffer)
                 stack.push({ text: buffer });
@@ -81,7 +88,7 @@ function parseFormattedText(text) {
             continue;
         }
 
-        if(text[i] == "\n" && !escaped) {
+        if(text[i] == "\n") {
             if(buffer)
                 stack.push({ text: buffer });
             buffer = "";
@@ -112,6 +119,8 @@ function parseFormattedText(text) {
 
         if(text[i] != " ")
             ignoreWhitespaces = false;
+
+        escaped = false;
     }
 
     if(buffer)
