@@ -34,7 +34,16 @@ let myTextBox = new textBox(doc, "**Hello** World", {
 myTextBox.draw();
 ````
 
-#### Options
+### Supported formats
+- `**bold**`
+- `*italic*`
+- `***bold italic***`
+- `_underlined_`
+- `# Heading 1`
+- `## Heading 2`
+- Escape character: `\`
+
+### Options
 |Option|Description|Default value|
 |--|--|--|
 |`startY`|Initial Y position.|Top margin.|
@@ -61,15 +70,12 @@ Only a couple of styles are supported so far.
 *Supported styles:*
 - `fontSize`
 - `bold` (boolean)
+- `italic` (boolean)
+- `underline` (boolean)
 - `marginBottom`
 - `lineHeight` (line height factor)
 
 *Note:* Paragraph style will be the document's text style at the moment of drawing. Font face, size and leading should not change between the `textBox` instance creation and the execution of `draw()`.
-  
-## Supported formats
-- `**bold**`
-- `# Heading 1`
-- `## Heading 2`
 
 ## TODO
 1. Add more formatting tokens, including colors, links and images--or full Markdown support.

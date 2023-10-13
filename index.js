@@ -7,14 +7,20 @@ const { trim } = require("lodash");
  */
 function parseFormattedText(text) {
     //**bold**
+    //*italic*
+    //***bold italic***
+    //_underlined_
     //# h1
     //## h2
+    //escape char \
 
     let buffer = "",
         open = {
             h1: false,
             h2: false,
-            bold: false
+            bold: false,
+            italic: false,
+            underline: false
         },
         ignoreWhitespaces = false,
         stack = [];
@@ -22,7 +28,10 @@ function parseFormattedText(text) {
     text = text.replace(/(\r\n|\n\r)/g, "\n");
 
     for(let i = 0; i < text.length; i++) {
-        if(text[i] == "*" && text[i + 1] == "*") {
+        let escaped = i > 0 && text[i - 1] == "\\";
+
+        //**
+        if(text[i] == "*" && text[i + 1] == "*" && !escaped) {
             if(buffer)
                 stack.push({ text: buffer });
             buffer = "";
@@ -34,7 +43,31 @@ function parseFormattedText(text) {
             continue;
         }
 
-        if(!buffer && text[i] == "#") {
+        //*
+        if(text[i] == "*" && !escaped) {
+            if(buffer)
+                stack.push({ text: buffer });
+            buffer = "";
+
+            open.italic = !open.italic;
+            stack.push({ italic: open.italic });
+
+            continue;
+        }
+
+        //_
+        if(text[i] == "_" && !escaped) {
+            if(buffer)
+                stack.push({ text: buffer });
+            buffer = "";
+
+            open.underline = !open.underline;
+            stack.push({ underline: open.underline });
+
+            continue;
+        }
+
+        if(!buffer && text[i] == "#" && !escaped) {
             if(text[i + 1] == "#") {
                 open.h2 = true;
                 stack.push({ h2: true });
@@ -48,7 +81,7 @@ function parseFormattedText(text) {
             continue;
         }
 
-        if(text[i] == "\n") {
+        if(text[i] == "\n" && !escaped) {
             if(buffer)
                 stack.push({ text: buffer });
             buffer = "";
@@ -183,7 +216,9 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
 
     let defaultStyle = {
         fontSize: doc.getFontSize(),
-        bold: false
+        bold: false,
+        italic: false,
+        underline: false
     };
 
     /**
@@ -306,11 +341,37 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
                 continue;
             }
 
+            if(token.italic) {
+                currentStyle = applyStyles({ italic: true });
+                this.data.push(token);
+                continue;
+            }
+
+            if(token.italic === false) {
+                currentStyle = applyStyles({ italic: false });
+                this.data.push(token);
+                continue;
+            }
+
+            if(token.underline) {
+                currentStyle = applyStyles({ underline: true });
+                this.data.push(token);
+                continue;
+            }
+
+            if(token.underline === false) {
+                currentStyle = applyStyles({ underline: false });
+                this.data.push(token);
+                continue;
+            }
+
             if(skipToNextLine)
                 continue;
 
             if(token.space) {
-                let { w } = doc.getTextDimensions(" "); //the width can change in each iteration
+                let { w, h } = doc.getTextDimensions(" "); //the width can change in each iteration
+
+                token.x = x;
 
                 x += w;
 
@@ -345,11 +406,16 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
                     }
                 }
 
+                token.y = y;
+                token.width = w;
+                token.height = h;
+                this.data.push(token);
+
                 continue;
             }
 
             if(token.text) {
-                let { w } = doc.getTextDimensions(token.text);
+                let { w, h } = doc.getTextDimensions(token.text);
 
                 if(x + w > maxX) {
                     if(lineBreak) {
@@ -388,6 +454,7 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
                 token.x = x;
                 token.y = y;
                 token.width = w;
+                token.height = h;
                 this.data.push(token);
 
                 x += w;
@@ -425,7 +492,30 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
         if(typeof styles == "undefined")
             styles = defaultStyle;
 
-        doc.setFont(undefined, styles.bold ? "bold" : "normal");
+        let type = "normal",
+            { fontStyle } = doc.getFont();
+
+        if(styles.bold)
+            type = fontStyle == "italic"
+                ? "bolditalic"
+                : "bold";
+
+        if(styles.italic)
+            type = fontStyle == "bold"
+                ? "bolditalic"
+                : "italic";
+
+        if(styles.bold === false)
+            type = fontStyle == "bolditalic"
+                ? "italic"
+                : "normal";
+
+        if(styles.italic === false)
+            type = fontStyle == "bolditalic"
+                ? "bold"
+                : "normal";
+
+        doc.setFont(undefined, type);
 
         if(styles.fontSize)
             doc.setFontSize(styles.fontSize);
@@ -469,6 +559,8 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
     this.draw = function () {
         doc.saveGraphicsState();
 
+        let underline = false;
+
         for(let token of this.data) {
             if(token.pageBreak) {
                 doc.addPage();
@@ -500,8 +592,35 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
                 continue;
             }
 
-            if(token.text)
-                doc.text(token.text, token.x, token.y, { baseline });
+            if(token.italic) {
+                applyStyles({ italic: true });
+                continue;
+            }
+
+            if(token.italic === false) {
+                applyStyles({ italic: false });
+                continue;
+            }
+
+            if(token.underline) {
+                underline = true;
+                continue;
+            }
+
+            if(token.underline === false) {
+                underline = false;
+                continue;
+            }
+
+            if(token.text || token.space) {
+                if(token.text)
+                    doc.text(token.text, token.x, token.y, { baseline });
+
+                if(underline)
+                    doc.setLineWidth(doc.getFontSize() * .03)
+                        .setDrawColor(doc.getTextColor())
+                        .line(token.x, token.y + token.height * .66, token.x + token.width, token.y + token.height * .66);
+            }
         }
 
         doc.restoreGraphicsState();
