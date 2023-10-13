@@ -274,6 +274,7 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
         let x = margin.left,
             y = startY,
             lines = 1,
+            prevLineHeightFactor = doc.getLineHeightFactor(),
             lineHeight = computeCurrentLineHeight(defaultStyle);
 
         let stack = parseFormattedText(text),
@@ -481,6 +482,8 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
             : y - margin.top + lineHeight;
 
         doc.restoreGraphicsState();
+        //save/restore doesn't preserve line height factor
+        doc.setLineHeightFactor(prevLineHeightFactor);
     };
 
     /**
