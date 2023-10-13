@@ -131,6 +131,7 @@ function parseFormattedText(text) {
 
 /**
  * Updates the tokens horizontal positioning, if necessary, to justify one line of text.
+ * @param {jsPDF} doc - jsPDF instance.
  * @param {object[]} tokens - List of tokens to update.
  * @param {number} startX - Start X value.
  * @param {number} lineWidth - Line width.
@@ -146,7 +147,7 @@ function justifyLine(doc, tokens, startX, maxWidth, textAlign, br) {
         lineWidth = 0,
         wordCount = 0;
     for(let i = 0; i < tokens.length; i++) {
-        if(tokens[i].text) {
+        if(tokens[i].text || tokens[i].space) {
             lastToken = tokens[i];
             wordCount++;
             textWidth += tokens[i].width;
@@ -173,7 +174,7 @@ function justifyLine(doc, tokens, startX, maxWidth, textAlign, br) {
     if(textAlign == "right") {
         let add = maxWidth - lineWidth;
         for(let token of tokens)
-            if(token.text)
+            if(token.text || token.space)
                 token.x += add;
         return;
     }
@@ -181,7 +182,7 @@ function justifyLine(doc, tokens, startX, maxWidth, textAlign, br) {
     if(textAlign == "center") {
         let add = (maxWidth - lineWidth) / 2;
         for(let token of tokens)
-            if(token.text)
+            if(token.text || token.space)
                 token.x += add;
         return;
     }
@@ -190,7 +191,7 @@ function justifyLine(doc, tokens, startX, maxWidth, textAlign, br) {
         let spaceWidth = (maxWidth - textWidth) / (wordCount - 2),
             x = startX;
         for(let i = 0; i < tokens.length; i++)
-            if(tokens[i].text) {
+            if(tokens[i].text || tokens[i].space) {
                 tokens[i].x = x;
                 x += tokens[i].width + spaceWidth;
             }
@@ -282,6 +283,8 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
             currentLineStart = 0;
 
         doc.saveGraphicsState();
+
+        doc.setLineHeightFactor(1);
 
         //start in the next page if there isn't enoguh space for at least one line
         if(y + lineHeight > maxY) {
@@ -622,13 +625,20 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
             }
 
             if(token.text || token.space) {
+                //display box around the token for debugging purposes
+                //doc.setDrawColor("black")
+                //    .setLineWidth(.1)
+                //    .rect(token.x, token.y, token.width, token.height);
+
                 if(token.text)
                     doc.text(token.text, token.x, token.y, { baseline });
 
-                if(underline)
+                if(underline) {
+                    let offsetY = token.height * 1.18;
                     doc.setLineWidth(doc.getFontSize() * .03)
                         .setDrawColor(doc.getTextColor())
-                        .line(token.x, token.y + token.height * .66, token.x + token.width, token.y + token.height * .66);
+                        .line(token.x, token.y + offsetY, token.x + token.width, token.y + offsetY);
+                }
             }
         }
 
