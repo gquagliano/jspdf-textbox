@@ -18,6 +18,11 @@ function parseFormattedText(text) {
         open = {
             h1: false,
             h2: false,
+            small: false,
+            center: false,
+            right: false,
+            justify: false,
+            left: false,
             bold: false,
             italic: false,
             underline: false
@@ -34,7 +39,7 @@ function parseFormattedText(text) {
                 buffer += "\\";
                 i++;
             } else {
-                escaped = true;
+                escaped = text[i + 1];
             }
 
             continue;
@@ -88,6 +93,42 @@ function parseFormattedText(text) {
             continue;
         }
 
+        if(!buffer && text[i] == "^" && !escaped) {
+            open.small = true
+            stack.push({ small: true });
+
+            ignoreWhitespaces = true;
+            continue;
+        }
+
+        if(!buffer && text[i] == "<" && !escaped) {
+            if(text[i + 1] == ">") {
+                open.justify = true;
+                stack.push({ justify: true });
+                i++; //skip next >
+            } else {
+                open.left = true
+                stack.push({ left: true });
+            }
+
+            ignoreWhitespaces = true;
+            continue;
+        }
+
+        if(!buffer && text[i] == ">" && !escaped) {
+            if(text[i + 1] == ">") {
+                open.right = true;
+                stack.push({ right: true });
+                i++; //skip next >
+            } else {
+                open.center = true;
+                stack.push({ center: true });
+            }
+
+            ignoreWhitespaces = true;
+            continue;
+        }
+
         if(text[i] == "\n") {
             if(buffer)
                 stack.push({ text: buffer });
@@ -120,7 +161,8 @@ function parseFormattedText(text) {
         if(text[i] != " ")
             ignoreWhitespaces = false;
 
-        escaped = false;
+        if(text[i] != escaped || text[i] == " ")
+            escaped = false;
     }
 
     if(buffer)
@@ -145,13 +187,17 @@ function justifyLine(doc, tokens, startX, maxWidth, textAlign, br) {
     let lastToken,
         textWidth = 0,
         lineWidth = 0,
-        wordCount = 0;
+        wordCount = 0,
+        fourSpaces;
     for(let i = 0; i < tokens.length; i++) {
         if(tokens[i].text || tokens[i].space) {
             lastToken = tokens[i];
             wordCount++;
             textWidth += tokens[i].width;
         }
+
+        if(i > 0 && i < tokens.length - 4 && tokens[i].space && tokens[i + 1].space && tokens[i + 2].space && tokens[i + 3].space)
+            fourSpaces = i;
     }
 
     if(!lastToken)
@@ -162,7 +208,7 @@ function justifyLine(doc, tokens, startX, maxWidth, textAlign, br) {
     if(lineWidth >= maxWidth)
         return;
 
-    if(br) {
+    if(br && !fourSpaces) {
         if(textAlign == "justify-right")
             textAlign = "right";
         else if(textAlign == "justify-center")
@@ -188,13 +234,28 @@ function justifyLine(doc, tokens, startX, maxWidth, textAlign, br) {
     }
 
     if(textAlign == "justify" || textAlign == "justify-right" || textAlign == "justify-center") {
-        let spaceWidth = (maxWidth - textWidth) / (wordCount - 2),
-            x = startX;
-        for(let i = 0; i < tokens.length; i++)
-            if(tokens[i].text || tokens[i].space) {
-                tokens[i].x = x;
-                x += tokens[i].width + spaceWidth;
-            }
+        let availableSpace = maxWidth - textWidth;
+
+        //four consecutive spaces in a justified line breaks the line in two
+        if(fourSpaces) {
+            //make the spaces invisible
+            tokens[fourSpaces].space = false;
+            tokens[fourSpaces + 1].space = false;
+            tokens[fourSpaces + 2].space = false;
+            tokens[fourSpaces + 3].space = false;
+            
+            for(let i = fourSpaces + 4; i < tokens.length; i++)
+                tokens[i].x += availableSpace;
+        } else {
+            let spaceWidth = availableSpace / (wordCount - 2),
+                x = startX;
+            for(let i = 0; i < tokens.length; i++)
+                if(tokens[i].text || tokens[i].space) {
+                    tokens[i].x = x;
+                    x += tokens[i].width + spaceWidth;
+                }
+        }
+
         return;
     }
 }
@@ -225,10 +286,30 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
     this.finalHeight = 0;
 
     let defaultStyle = {
-        fontSize: doc.getFontSize(),
-        bold: false,
-        italic: false,
-        underline: false
+        p: {
+            fontSize: doc.getFontSize(),
+            bold: false,
+            italic: false,
+            underline: false
+        },
+        h1: {
+            fontSize: doc.getFontSize() * 1.75,
+            bold: true,
+            italic: false,
+            underline: false
+        },
+        h2: {
+            fontSize: doc.getFontSize() * 1.45,
+            bold: true,
+            italic: false,
+            underline: false
+        },
+        small: {
+            fontSize: doc.getFontSize() * .85,
+            bold: false,
+            italic: false,
+            underline: false
+        }
     };
 
     /**
@@ -278,7 +359,7 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
             lineHeight = computeCurrentLineHeight(defaultStyle);
 
         let stack = parseFormattedText(text),
-            currentTextAign = textAlign, //in the future, there might be a token to set the next paragraph align
+            currentTextAign = textAlign,
             skipToNextLine,
             currentStyle,
             currentLineStart = 0;
@@ -297,6 +378,26 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
         for(let i = 0; i < stack.length; i++) {
             let token = stack[i];
 
+            if(token.left) {
+                currentTextAign = "left";
+                continue;
+            }
+
+            if(token.right) {
+                currentTextAign = "right";
+                continue;
+            }
+
+            if(token.justify) {
+                currentTextAign = "justify-left";
+                continue;
+            }
+
+            if(token.center) {
+                currentTextAign = "center";
+                continue;
+            }
+
             if(token.br) {
                 skipToNextLine = false;
 
@@ -305,6 +406,7 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
                 lines++;
 
                 getLineAndJustify(this.data, currentLineStart, currentTextAign, true);
+                currentTextAign = textAlign;
                 currentLineStart = this.data.length;
 
                 if(y > maxY || (numLines && lines > numLines)) {
@@ -322,24 +424,42 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
             }
 
             if(token.h1) {
-                currentStyle = applyStyles(styles.h1);
+                currentStyle = applyStyles({
+                    ...defaultStyle.h1,
+                    ...styles.h1
+                });
                 lineHeight = computeCurrentLineHeight(currentStyle);
                 this.data.push(token);
                 continue;
             }
 
             if(token.h2) {
-                currentStyle = applyStyles(styles.h2);
+                currentStyle = applyStyles({
+                    ...defaultStyle.h2,
+                    ...styles.h2
+                });
                 lineHeight = computeCurrentLineHeight(currentStyle);
                 this.data.push(token);
                 continue;
             }
 
             if(token.p) {
-                currentStyle = applyStyles(); //revert to default
+                currentStyle = applyStyles({
+                    ...defaultStyle.p,
+                    ...styles.p
+                });
                 lineHeight = computeCurrentLineHeight(currentStyle);
                 this.data.push(token);
                 continue;
+            }
+
+            if(token.small) {
+                currentStyle = applyStyles({
+                    ...defaultStyle.small,
+                    ...styles.small
+                });
+                lineHeight = computeCurrentLineHeight(currentStyle);
+                this.data.push(token);
             }
 
             if(token.bold) {
@@ -401,6 +521,7 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
                     }
 
                     getLineAndJustify(this.data, currentLineStart, currentTextAign);
+                    currentTextAign = textAlign;
                     currentLineStart = this.data.length;
                 }
 
@@ -443,6 +564,7 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
                     }
 
                     getLineAndJustify(this.data, currentLineStart, currentTextAign);
+                    currentTextAign = textAlign;
                     currentLineStart = this.data.length;
 
                     if(!lineBreak)
@@ -504,9 +626,6 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
      * @returns {object}
      */
     function applyStyles(styles) {
-        if(typeof styles == "undefined")
-            styles = defaultStyle;
-
         let type = "normal",
             { fontStyle } = doc.getFont();
 
@@ -574,6 +693,9 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
     this.draw = function () {
         doc.saveGraphicsState();
 
+        let prevLineHeightFactor = doc.getLineHeightFactor();
+        doc.setLineHeightFactor(1);
+
         let underline = false;
 
         for(let token of this.data) {
@@ -583,17 +705,34 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
             }
 
             if(token.h1) {
-                applyStyles(styles.h1);
+                applyStyles({
+                    ...defaultStyle.h1,
+                    ...styles.h1
+                });
                 continue;
             }
 
             if(token.h2) {
-                applyStyles(styles.h2);
+                applyStyles({
+                    ...defaultStyle.h2,
+                    ...styles.h2
+                });
                 continue;
             }
 
             if(token.p) {
-                applyStyles(); //revert to default
+                applyStyles({
+                    ...defaultStyle.p,
+                    ...styles.p
+                });
+                continue;
+            }
+
+            if(token.small) {
+                applyStyles({
+                    ...defaultStyle.small,
+                    ...styles.small
+                });
                 continue;
             }
 
@@ -629,9 +768,9 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
 
             if(token.text || token.space) {
                 //display box around the token for debugging purposes
-                //doc.setDrawColor("black")
-                //    .setLineWidth(.1)
-                //    .rect(token.x, token.y, token.width, token.height);
+                // doc.setDrawColor("black")
+                //     .setLineWidth(.1)
+                //     .rect(token.x, token.y, token.width, token.height);
 
                 if(token.text)
                     doc.text(token.text, token.x, token.y, { baseline });
@@ -646,6 +785,8 @@ function textBox(doc, text, { startY = 0, margin, width, baseline = "top", numLi
         }
 
         doc.restoreGraphicsState();
+        //save/restore doesn't preserve line height factor
+        doc.setLineHeightFactor(prevLineHeightFactor);
 
         return this;
     };

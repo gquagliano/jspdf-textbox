@@ -39,9 +39,19 @@ myTextBox.draw();
 - `*italic*`
 - `***bold italic***`
 - `_underlined_`
-- `# Heading 1`
-- `## Heading 2`
+- `# Heading 1` (block)
+- `## Heading 2` (block)
+- `> Centered paragraph` (block)
+- `>> Right-aligned paragraph` (block)
+- `<> Justified paragraph` (block)
+- `Fill with    spaces in between` (four spaces, only if the box/block is justified)
+- `< Left-aligned paragraph` (block)
+- `^ Small text` (block)
 - Escape character: `\`
+
+*Note:* *"block"* means that the token formats whole lines (until line break or end of input), and it must be located at the begining of the line.
+
+*Note:* You can use one single escape character in front of a string of all the same character, for example: `\_______` will print the entire line `_______` instead of escaping just the first underscore.
 
 ### Options
 |Option|Description|Default value|
@@ -63,9 +73,10 @@ Only a couple of styles are supported so far.
 
 |Property|Description|Default|
 |--|--|--|
-|`h1`|Heading 1||
-|`h2`|Heading 2||
+|`h1`|Heading 1|`bold = true`, `fontSize` 175% of default text size|
+|`h2`|Heading 2|`bold = true`, `fontSize` 145% of default text size|
 |`p`|Default text style||
+|`small`|Default small text style|`fontSize` 85% of default text size|
 
 *Supported styles:*
 - `fontSize`
@@ -76,6 +87,8 @@ Only a couple of styles are supported so far.
 - `lineHeight` (line height factor)
 
 *Note:* Paragraph style will be the document's text style at the moment of drawing. Font face, size and leading should not change between the `textBox` instance creation and the execution of `draw()`.
+
+*Note:* Styles reset for each block/paragraph.
 
 ## TODO
 1. Add more formatting tokens, including colors, links and images--or full Markdown support.
